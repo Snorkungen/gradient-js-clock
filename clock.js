@@ -19,8 +19,13 @@ let msToS = n => n / 1000, // milliseconds to seconds
 //setup
 let p;// stores date.now() for usage in pause method
 let clock = document.getElementById("clock"); // selects clock div
-let info = document.getElementById("info"); // selects info div
+let info = document.getElementById("info"); // selects info element
 let e = createEl("h2", clock), b = createEl("button", clock); // creates an h2 and a button
+function infoFunc(txt) {
+    info.style.display = "block";
+    info.textContent = txt;
+    setTimeout(() => { info.style.display = "none" },(1000*9))
+    }
 
 function pause() {
     clearInterval(run);
@@ -34,7 +39,7 @@ let pauseTimer = (method) => {
     if (method == "pause") p = Date.now()
     else {
         let x = Date.now() - p;
-        info.textContent = `${text.info1} ${msToS(x)} ${text.info2}`
+        infoFunc(`${text.info1} ${msToS(x)} ${text.info2}`);
     }
 
 }
