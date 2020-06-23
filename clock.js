@@ -12,8 +12,8 @@ const text = {
 
 // Tiny kinda useful functions
 let msToS = n => n / 1000, // milliseconds to seconds
-    genRGBhour = H => H + 1 * 10, // generate a value from the range 1 - 255 using hour
-    genRGB = n => n + 1 * 4, // generate a value from the range 1 - 255 usin value 0 - 59
+    genRGBhour = H => (H + 10) * 10, // generate a value from the range 1 - 255 using hour
+    genRGB = n => (n + 1) * 4, // generate a value from the range 1 - 255 usin value 0 - 59
     createEl = (el, parent) => parent.appendChild(document.createElement(el)); // creates and appends elemnt
 
 //setup
