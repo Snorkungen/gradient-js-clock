@@ -12,8 +12,8 @@ const text = {
 
 // Tiny kinda useful functions
 let msToS = n => n / 1000, // milliseconds to seconds
-    genRGBhour = H => (H + 10) * 10, // generate a value from the range 1 - 255 using hour
-    genRGB = n => (n + 1) * 4, // generate a value from the range 1 - 255 usin value 0 - 59
+    genRGBhour = H => (H + 1) * 10.625, // generate a value from the range 1 - 255 using hour
+    genRGB = n => (n + 1) * 4.25, // generate a value from the range 1 - 255 usin value 0 - 59
     createEl = (el, parent) => parent.appendChild(document.createElement(el)); // creates and appends elemnt
 
 //setup
@@ -24,8 +24,8 @@ let e = createEl("h2", clock), b = createEl("button", clock); // creates an h2 a
 function infoFunc(txt) {
     info.style.display = "block";
     info.textContent = txt;
-    setTimeout(() => { info.style.display = "none" },(1000*9))
-    }
+    setTimeout(() => { info.style.display = "none" }, (1000 * 9))
+}
 
 function pause() {
     clearInterval(run);
@@ -84,11 +84,10 @@ function main() {
         t = formatedTime(n);
 
     e.textContent = `${t.H}:${t.min}:${t.sec}`;
-
     let gIn1 = `rgb(${genRGBhour(n.H)},${genRGB(n.min)},${genRGB(n.sec)})`,
         gIn2 = `rgb(${genRGB(n.min)},${genRGBhour(n.H)},${genRGB(n.sec)})`,
         gIn3 = `rgb(${genRGB(n.sec)},${genRGBhour(n.H)},${genRGB(n.min)})`;
-    let gradient = `linear-gradient(${gIn1},${gIn2},${gIn3})`;
+    let gradient = `linear-gradient(45deg,${gIn1},${gIn2},${gIn3})`;
     clock.style.background = gradient + ' no-repeat';
 }
 let run;
