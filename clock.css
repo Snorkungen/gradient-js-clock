@@ -1,7 +1,7 @@
 :root {
     --bg-dark:hsl(0, 100%, 60%);
     --bg-light:#ff7;
-    --accent-light: #55ff55
+    --accent-light: #00c458
 }
 
 *{
@@ -19,7 +19,7 @@ body {
 
 .text-center {
     text-align: center;
-    font-size: 2rem;
+    font-size: 2.5rem;
 }
 
 .container {
@@ -51,8 +51,8 @@ button {
     background-color: var(--bg-light);
     color: var(--accent-light);
     margin: 10px;
-    max-height: 400px;
-    max-width: 400px;
+    max-height: 450px;
+    max-width: 450px;
     height: 50vw;
     width: 50vw;
 }
