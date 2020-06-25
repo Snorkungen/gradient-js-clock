@@ -20,7 +20,7 @@ let msToS = n => n / 1000, // milliseconds to seconds
 let p;// stores date.now() for usage in pause method
 let clock = document.getElementById("clock"); // selects clock div
 let info = document.getElementById("info"); // selects info element
-let e = createEl("h2", clock), b = createEl("button", clock); // creates an h2 and a button
+let e = createEl("h2", clock)//, b = createEl("button", clock); // creates an h2 and a button
 function infoFunc(txt) {
     info.style.display = "block";
     info.textContent = txt;
