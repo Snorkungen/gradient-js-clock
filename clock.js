@@ -20,7 +20,7 @@ let msToS = n => n / 1000, // milliseconds to seconds
 let p;// stores date.now() for usage in pause method
 let clock = document.getElementById("clock"); // selects clock div
 let info = document.getElementById("info"); // selects info element
-let e = createEl("h2", clock)//, b = createEl("button", clock); // creates an h2 and a button
+let e = createEl("h2", clock);//, b = createEl("button", clock); // creates an h2 and a button
 function infoFunc(txt) {
     info.style.display = "block";
     info.textContent = txt;
@@ -29,8 +29,8 @@ function infoFunc(txt) {
 
 function pause() {
     clearInterval(run);
-    b.textContent = text.button1;
-    b.setAttribute("onclick", "start()");
+    //b.textContent = text.button1;
+    //b.setAttribute("onclick", "start()");
     pauseTimer("pause");
 }
 
@@ -45,9 +45,9 @@ let pauseTimer = (method) => {
 }
 
 function start(m) {
-    b.textContent = text.button2
-    b.setAttribute("onclick", "pause()")
     run = setInterval(main, 1000);
+    //b.textContent = text.button2
+    //b.setAttribute("onclick", "pause()")
     if (m == "start") console.log("clock started")
     else pauseTimer("unpause")
 }
