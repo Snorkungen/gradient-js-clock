@@ -17,14 +17,17 @@ let msToS = n => n / 1000, // milliseconds to seconds
     createEl = (el, parent) => parent.appendChild(document.createElement(el)); // creates and appends elemnt
 
 //setup
-let p;// stores date.now() for usage in pause method
+let p; // stores date.now() for usage in pause method
 let clock = document.getElementById("clock"); // selects clock div
+let gradientC = document.getElementById("gradient"); // selects clock div
 let info = document.getElementById("info"); // selects info element
-let e = createEl("h2", clock);//, b = createEl("button", clock); // creates an h2 and a button
+let e = createEl("h2", clock); //, b = createEl("button", clock); // creates an h2 and a button
 function infoFunc(txt) {
     info.style.display = "block";
     info.textContent = txt;
-    setTimeout(() => { info.style.display = "none" }, (1000 * 9))
+    setTimeout(() => {
+        info.style.display = "none"
+    }, (1000 * 9))
 }
 
 function pause() {
@@ -88,7 +91,23 @@ function main() {
         gIn2 = `rgb(${genRGB(n.min)},${genRGBhour(n.H)},${genRGB(n.sec)})`,
         gIn3 = `rgb(${genRGB(n.sec)},${genRGBhour(n.H)},${genRGB(n.min)})`;
     let gradient = `linear-gradient(45deg,${gIn1},${gIn2},${gIn3})`;
-    clock.style.background = gradient + ' no-repeat';
+    gradientC.style.background = gradient + ' no-repeat';
+    setTimeout(()=>{createBubble(`linear-gradient(45deg,${gIn1},${gIn2},${gIn3})`);},0)
+    setTimeout(()=>{createBubble(`linear-gradient(45deg,${gIn2},${gIn1},${gIn3})`);},500)
+    setTimeout(()=>{createBubble(`linear-gradient(45deg,${gIn3},${gIn2},${gIn1})`);},1000)
 }
 let run;
 start("start");
+
+function createBubble(g) {
+    let el = createEl("span", gradientC);
+    let size = Math.random() * 60;
+
+    el.style.width = size + "px";
+    el.style.height = size + "px";
+    el.style.left = Math.random() * innerWidth - size + "px";
+    el.style.background = g;
+    setTimeout(() => {
+        el.remove();
+    },4000)
+}
