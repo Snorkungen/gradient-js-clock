@@ -2,18 +2,10 @@
 //Also includes a gradient that corresponds with the clock
 // Oghenochuko Oke 21/06/2020
 
-// text 
-const text = {
-    button1: "Sätt igång klockan!",
-    button2: "Stanna klockan!",
-    info1: "Klockan var stannad",
-    info2: "sekunder."
-}
-
 // Tiny kinda useful functions
 let msToS = n => n / 1000, // milliseconds to seconds
-    genRGBhour = H => (H + 1) * 10.625, // generate a value from the range 1 - 255 using hour
-    genRGB = n => (n + 1) * 4.25, // generate a value from the range 1 - 255 usin value 0 - 59
+    genRGBhour = H => (numberScramble(H) + 1) * 10.625, // generate a value from the range 1 - 255 using hour
+    genRGB = n => (numberScramble(n) + 1) * 4.25, // generate a value from the range 1 - 255 usin value 0 - 59
     createEl = (el, parent) => parent.appendChild(document.createElement(el)); // creates and appends elemnt
 
 //setup
@@ -22,37 +14,19 @@ let clock = document.getElementById("clock"); // selects clock div
 let gradientC = document.getElementById("gradient"); // selects clock div
 let info = document.getElementById("info"); // selects info element
 let e = createEl("h2", clock); //, b = createEl("button", clock); // creates an h2 and a button
-function infoFunc(txt) {
-    info.style.display = "block";
-    info.textContent = txt;
-    setTimeout(() => {
-        info.style.display = "none"
-    }, (1000 * 9))
-}
-
-function pause() {
-    clearInterval(run);
-    //b.textContent = text.button1;
-    //b.setAttribute("onclick", "start()");
-    pauseTimer("pause");
-}
-
-
-let pauseTimer = (method) => {
-    if (method == "pause") p = Date.now()
-    else {
-        let x = Date.now() - p;
-        infoFunc(`${text.info1} ${msToS(x)} ${text.info2}`);
-    }
-
-}
 
 function start(m) {
+    main();
     run = setInterval(main, 1000);
-    //b.textContent = text.button2
-    //b.setAttribute("onclick", "pause()")
-    if (m == "start") console.log("clock started")
-    else pauseTimer("unpause")
+    console.log("clock started");
+}
+
+function numberScramble (n) {
+    let temp = n * 0.3244;
+    temp += 1;
+    temp *= 0.2467;
+    temp *= temp;
+    return temp * 4;
 }
 
 function makeTwoDigit(num) {
@@ -92,16 +66,23 @@ function main() {
         gIn3 = `rgb(${genRGB(n.sec)},${genRGBhour(n.H)},${genRGB(n.min)})`;
     let gradient = `linear-gradient(45deg,${gIn1},${gIn2},${gIn3})`;
     gradientC.style.background = gradient + ' no-repeat';
-    setTimeout(()=>{createBubble(`linear-gradient(45deg,${gIn1},${gIn2},${gIn3})`);},0)
-    setTimeout(()=>{createBubble(`linear-gradient(45deg,${gIn2},${gIn1},${gIn3})`);},500)
-    setTimeout(()=>{createBubble(`linear-gradient(45deg,${gIn3},${gIn2},${gIn1})`);},1000)
+    bbLoop(24,`linear-gradient(60deg,${gIn1},${gIn2},${gIn3})`)
 }
 let run;
 start("start");
 
+function bbLoop(count, grad) {
+    let z = 1000 / count,
+    t = 0;
+    for (let i = 0; i < count; i++) {
+        setTimeout(()=>{createBubble(grad);},t)
+        t+=z
+    }
+}
+
 function createBubble(g) {
     let el = createEl("span", gradientC);
-    let size = Math.random() * 60;
+    let size = Math.random() * 60 + 18;
 
     el.style.width = size + "px";
     el.style.height = size + "px";
@@ -109,5 +90,5 @@ function createBubble(g) {
     el.style.background = g;
     setTimeout(() => {
         el.remove();
-    },4000)
+    },3000)
 }

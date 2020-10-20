@@ -15,6 +15,7 @@ body {
     color: var(--bg-light);
     height: 100vh;
     font-family: Arial, Helvetica, sans-serif;
+    overflow: hidden;
 }
 
 .c {
@@ -22,37 +23,40 @@ body {
 }
 .top {
     position: relative;
-    background:#f1faee;
+    background:#f9facf;
     display: flex;
     align-items: center;
     justify-content: center;
-    color: #333;
-    font-size: 50px;
+    color: #ffffff;
+    font-size: 70px;
 }
 .top * {
     z-index: 10;
+    text-shadow: 0 0 0.7rem #2f2f2f;
 }
-
-span {
+.bottom {
+    transition: all 200ms ease;
+}
+.bottom span {
     position: absolute;
     border-radius: 50%;
-    bottom: calc(50vh - 100px);
+    bottom: calc(50vh - 40px);
     z-index: 2;
-    animation: bubbleA 4s;
+    animation: bubbleA 3s;
 }
 @keyframes bubbleA {
     from {
         transform: translateY(0%) rotate(0deg);
         opacity: 0;
     }
-    5% {
+    16% {
         opacity: 1;
     }
     99% {
         opacity: 1;
     }
     to {
-        transform: translateY(-100vh) rotate(180deg);
+        transform: translateY(-59vh) rotate(360deg);
         opacity: 0;
     }
 }
