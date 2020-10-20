@@ -21,6 +21,10 @@ function start(m) {
     console.log("clock started");
 }
 
+function hsl (h,m,s) {
+    return `hsl(${(m*s/2)*4},100%,${h*4.1666}%)`;
+}
+
 function numberScramble (n) {
     let temp = n * 0.3244;
     temp += 1;
@@ -64,9 +68,10 @@ function main() {
     let gIn1 = `rgb(${genRGBhour(n.H)},${genRGB(n.min)},${genRGB(n.sec)})`,
         gIn2 = `rgb(${genRGB(n.min)},${genRGBhour(n.H)},${genRGB(n.sec)})`,
         gIn3 = `rgb(${genRGB(n.sec)},${genRGBhour(n.H)},${genRGB(n.min)})`;
-    let gradient = `linear-gradient(45deg,${gIn1},${gIn2},${gIn3})`;
+    let gradient = `linear-gradient(90deg,${gIn1},${gIn2},${gIn3})`;
     gradientC.style.background = gradient + ' no-repeat';
-    bbLoop(24,`linear-gradient(60deg,${gIn1},${gIn2},${gIn3})`)
+    bbLoop(14,hsl(n.H,n.sec,n.min))
+    //bbLoop(12,`linear-gradient(60deg,${gIn1},${gIn2},${gIn3})`)
 }
 let run;
 start("start");
@@ -90,5 +95,5 @@ function createBubble(g) {
     el.style.background = g;
     setTimeout(() => {
         el.remove();
-    },3000)
+    },5000)
 }

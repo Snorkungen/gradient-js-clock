@@ -19,44 +19,53 @@ body {
 }
 
 .c {
-    height: 50vh;
+   width: 100%;
 }
 .top {
     position: relative;
-    background:#f9facf;
+    background-image:url("penguinuhh-vEK0mCz4Ow0-unsplash.jpg");
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center;
     display: flex;
     align-items: center;
     justify-content: center;
     color: #ffffff;
     font-size: 70px;
+
+    height: 100vh;
 }
 .top * {
     z-index: 10;
     text-shadow: 0 0 0.7rem #2f2f2f;
 }
 .bottom {
+    height: 10vh;
     transition: all 200ms ease;
 }
 .bottom span {
     position: absolute;
     border-radius: 50%;
-    bottom: calc(50vh - 40px);
+    bottom: -50px;
     z-index: 2;
-    animation: bubbleA 3s;
+    opacity: 0;
+    animation: bubbleA 5s ease;
+    opacity: 0.7;
 }
 @keyframes bubbleA {
     from {
         transform: translateY(0%) rotate(0deg);
         opacity: 0;
     }
-    16% {
-        opacity: 1;
+    10% {
+        opacity: 0.5;
     }
-    99% {
-        opacity: 1;
+    85% {
+        
+        opacity: 0.6;
     }
     to {
-        transform: translateY(-59vh) rotate(360deg);
+        transform: translateY(-110vh) rotate(360deg);
         opacity: 0;
     }
 }
