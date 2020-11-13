@@ -49,7 +49,7 @@ button {
     border: 3px solid var(--accent-light);
     border-radius: 30px;
     background-color: var(--bg-light);
-    color: var(--accent-light);
+    color: var(--bg-dark);
     margin: 10px;
     max-height: 450px;
     max-width: 450px;
