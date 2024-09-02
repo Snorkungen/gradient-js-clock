@@ -1,20 +1,160 @@
+<!-- Snorkungen 2024 - gradient-js-clock -->
 <!DOCTYPE html>
 <html lang="en">
 
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Javascript Clock</title>
-    <link rel="stylesheet" href="clock.css">
+    <title>Gradient Clock</title>
+    <link rel="shortcut icon" href="#" />
+
+    <style>
+        :root {
+            --background-color: #e3e3e3;
+            --foreground-color: #2c2c2c;
+        }
+
+        html,
+        body,
+        #root {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+
+            background-color: var(--background-color);
+            color: var(--foreground-color);
+
+            text-align: center;
+            font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+
+            height: 100%;
+            width: 100%;
+
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        #root {
+            font-size: 3em;
+            border-radius: 10%;
+            height: 50vw;
+            width: 50vw;
+
+            position: relative;
+        }
+
+        #root canvas {
+            border-radius: 0.2em;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            z-index: 0;
+        }
+
+        #root h1 {
+            margin: 0;
+            padding: 0;
+            z-index: 9;
+
+            background-color: var(--background-color);
+            width: 100%;
+        }
+    </style>
+
+    <script>
+        /** @type {HTMLElement} */
+        let root_element,
+            /** @type {HTMLElement} */
+            title_element,
+            /** @type {HTMLElement} */
+            favicon_element,
+            /** @type {HTMLCanvasElement} */
+            gradient_element,
+            /** @type {CanvasRenderingContext2D} */
+            ctx,
+            /** @type {HTMLElement} */
+            time_element;
+        let v = 0
+        function render_data() {
+            let date = new Date(),
+                hours = date.getHours(),
+                minutes = date.getMinutes(),
+                seconds = date.getSeconds();
+
+
+            return {
+                date,
+                hours,
+                minutes,
+                seconds
+            };
+        }
+
+        const width = 50;
+        const x_resolution = 50;
+        let render_initialised = 0;
+
+        function render() {
+            let { hours, minutes, seconds } = render_data();
+            // get time and stuff
+
+            let time_string = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
+
+            title_element.textContent = time_string.substring(0, 5);
+            time_element.textContent = time_string;
+
+            // update image every 30 seconds
+            if (seconds != 30 && render_initialised) {
+                return;
+            }
+            render_initialised = 1;
+
+            for (let i = 0; i < x_resolution; i++) {
+                // i interpolate the lightness
+                let lightness = ((x_resolution - i) / x_resolution) * (1 - (minutes / 60)) * 50 + 30; // 30% -> 80%
+                let saturation = ((60 - minutes) / 60) * 40 + 30;
+                let hue = ((60 - minutes) / 60) * 60 + 60 * ((360 / 60) * ((hours) / 24));
+
+                ctx.fillStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+
+                ctx.fillRect(0, i * (gradient_element.width / x_resolution), gradient_element.width, gradient_element.width / x_resolution);
+            }
+
+            favicon_element.href = gradient_element.toDataURL();
+        }
+
+        function initialise(event) {
+            document.documentElement.style.setProperty("--background-color", "#1e1e1e")
+            document.documentElement.style.setProperty("--foreground-color", "#efefee")
+
+            root_element = document.getElementById("root");
+            title_element = document.getElementsByTagName("title")[0];
+
+            favicon_element = document.head.appendChild(document.createElement("link"));
+            favicon_element.rel = "shortcut icon";
+            favicon_element.href = "#";
+
+            gradient_element = root_element.appendChild(document.createElement("canvas"));
+            ctx = gradient_element.getContext("2d");
+            time_element = root_element.appendChild(document.createElement("h1"));
+
+            gradient_element.width = width;
+            gradient_element.height = width;
+
+            // draw something on the screen
+
+            console.log("start render")
+            render();
+            window.setInterval(render, 1000);
+        }
+
+        window.onload = initialise;
+    </script>
 </head>
 
 <body>
-    <h3 id="info" class="text-center"></h3>
-    <div class="container flex">
-        <h1 class="text-center">Min dumma js klocka</h1>
-        <div class="container text-center flex" id="clock"></div>
-    </div>
-    <script src="clock.js"></script>
+    <div id="root"></div>
 </body>
 
 </html>

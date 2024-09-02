@@ -1,2 +1,3 @@
 # gradient-js-clock
-a js clock with a rgb gradient
+
+An html page that displays the system time.
