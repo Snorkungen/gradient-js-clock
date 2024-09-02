@@ -105,7 +105,7 @@
             time_element.textContent = time_string;
 
             // update image every 30 seconds
-            if (seconds != 30 && render_initialised) {
+            if (seconds != 30 && render_initialised || seconds == 0) {
                 return;
             }
             render_initialised = 1;
