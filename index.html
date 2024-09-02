@@ -75,13 +75,12 @@
             ctx,
             /** @type {HTMLElement} */
             time_element;
-        let v = 0
+
         function render_data() {
             let date = new Date(),
                 hours = date.getHours(),
                 minutes = date.getMinutes(),
                 seconds = date.getSeconds();
-
 
             return {
                 date,
@@ -104,8 +103,8 @@
             title_element.textContent = time_string.substring(0, 5);
             time_element.textContent = time_string;
 
-            // update image every 30 seconds
-            if (seconds != 30 && render_initialised || seconds == 0) {
+            // update image every 12 seconds
+            if (render_initialised && seconds % 12 != 0) {
                 return;
             }
             render_initialised = 1;
