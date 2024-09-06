@@ -37,15 +37,19 @@
 
         #root {
             font-size: 3em;
-            border-radius: 10%;
-            height: 50vw;
-            width: 50vw;
+            border-radius: 2rem;
 
             position: relative;
+            aspect-ratio: 1 / 1;
+
+            width: fit-content;
+            height: auto;
+            padding: 2em;
         }
 
         #root canvas {
-            border-radius: 0.2em;
+            border-radius: 2rem;
+
             width: 100%;
             height: 100%;
             position: absolute;
@@ -58,11 +62,66 @@
             z-index: 9;
 
             background-color: var(--background-color);
-            width: 100%;
+            width: fit-content;
+            padding: 1rem;
+            border-radius: 2rem;
         }
     </style>
 
     <script>
+        const RGBToHSL = ([red, green, blue]) => {
+            red /= 255; green /= 255; blue /= 255;
+            let max = Math.max(red, green, blue),
+                min = Math.min(red, green, blue);
+            let hue = 0,
+                saturation,
+                lightness = (max + min) / 2;
+
+
+            if (max === min) {
+                hue = saturation = 0;
+            } else {
+                let diff = max - min;
+                saturation = lightness > 0.5 ? diff / (2 - max - min) : diff / (max + min);
+
+                switch (max) {
+                    case red:
+                        hue = (green - blue) / diff + (green < blue ? 6 : 0);
+                        break;
+                    case green:
+                        hue = (blue - red) / diff + 2;
+                        break;
+                    case blue:
+                        hue = (red - green) / diff + 4;
+                        break;
+                }
+
+                hue = hue / 6;
+            }
+
+            return [hue, saturation, lightness];
+        }
+
+        const HSLToRGB = ([hue, saturation, lightness]) => {
+            hue = Math.round(hue * 360);
+
+            let a = saturation * Math.min(lightness, 1 - lightness);
+            let f = (
+                n,
+                k = (n + (hue / 30)) % 12
+            ) => lightness - a * Math.max(-1, Math.min(k - 3, 9 - k, 1));
+
+            return [
+                Math.ceil(f(0) * 255),
+                Math.ceil(f(8) * 255),
+                Math.ceil(f(4) * 255),
+                1
+            ]
+        }
+    </script>
+    <script>
+
+
         /** @type {HTMLElement} */
         let root_element,
             /** @type {HTMLElement} */
@@ -76,26 +135,49 @@
             /** @type {HTMLElement} */
             time_element;
 
+        let colors = [
+            [203, 34, 32],
+            [103, 241, 32],
+            [203, 34, 122],
+            [203, 34, 322],
+            [23, 34, 22],
+            [23, 34, 32],
+            [243, 34, 232],
+            [3, 34, 32],
+            [2, 124, 342],
+            [203, 234, 35],
+            [223, 34, 32],
+            [213, 54, 32],
+        ];
+
         function render_data() {
             let date = new Date(),
                 hours = date.getHours(),
                 minutes = date.getMinutes(),
                 seconds = date.getSeconds();
 
+            // determine colors based on time ...
+            let color_idx = 1;
+            let start = colors[color_idx], end = colors[color_idx];
+
             return {
                 date,
                 hours,
                 minutes,
-                seconds
+                seconds,
+                milliseconds: date.getUTCMilliseconds(),
+
+                rgb_start: start, rgb_end: end,
             };
         }
 
-        const width = 50;
-        const x_resolution = 50;
+        const width = 20;
+        let radius = (width - 1) / 2;
+        let buffer = new Uint8ClampedArray(width * width * 4);
         let render_initialised = 0;
 
         function render() {
-            let { hours, minutes, seconds } = render_data();
+            let { hours, minutes, seconds, milliseconds, rgb_start, rgb_end } = render_data();
             // get time and stuff
 
             let time_string = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
@@ -103,22 +185,80 @@
             title_element.textContent = time_string.substring(0, 5);
             time_element.textContent = time_string;
 
-            // update image every 12 seconds
-            if (render_initialised && seconds % 12 != 0) {
+            // update image every 6 seconds
+            if (render_initialised && seconds % 1 != 0) {
                 return;
             }
-            render_initialised = 1;
 
-            for (let i = 0; i < x_resolution; i++) {
-                // i interpolate the lightness
-                let lightness = ((x_resolution - i) / x_resolution) * (1 - (minutes / 60)) * 50 + 30; // 30% -> 80%
+            let begin = [234, 120, 0], end = [239, 130, 0];
+
+            // determine target_angle based on seconds
+            // seconds / 60 * 2* Math.PI - Math.PI / 2
+            let target_angle = (1 - (seconds * 1000 + milliseconds) / (1000 * 60)) * 2 * Math.PI + Math.PI / 2, target_angle_fov = Math.PI / 2;
+
+            // draw a circle for the vibes ...
+
+            for (let i = 0; i < buffer.byteLength; i += 4) {
+                let x = (i % (width * 4)) / 4, y = Math.floor(i / (width * 4));
+                let ox = x - ((width - 1) / 2), oy = ((width - 1) / 2) - y; // values with the origin in the middle of the canvas
+
+                // distance from center
+                let dist = Math.sqrt(ox ** 2 + oy ** 2);
+                // calculate angle
+                // tan a = oy / ox
+                let angle = Math.atan(oy / ox);
+
+                // correct angle to a full rotation
+                if (isNaN(angle)) {
+                    angle = 0
+                }
+
+                if (oy >= 0 && ox >= 0) {
+                    // Q1
+                    angle = angle;
+                } else if (oy >= 0 && ox <= 0) {
+                    // Q2
+                    angle = Math.PI + angle // the angle is negative
+                } else if (oy < 0 && ox < 0) {
+                    // Q3
+                    angle = Math.PI + angle;
+                } else {
+                    // Q4
+                    angle = 2 * Math.PI + angle
+                }
+
+
+                let distance_from_target_angle = Math.min(Math.abs(target_angle - angle), Math.abs(target_angle - angle + 2 * Math.PI), Math.abs(angle - target_angle + 2 * Math.PI));
+
+
+                let lightness = ((width - y) / width) * (1 - (minutes / 60)) * 50 + 30; // 30% -> 80%
                 let saturation = ((60 - minutes) / 60) * 40 + 30;
-                let hue = ((60 - minutes) / 60) * 60 + 60 * ((360 / 60) * ((hours) / 24));
+                let hue = (((hours % 2 == 0) ? (60 - minutes) : minutes) / 60) * 60 + 60 * ((360 / 60) * ((hours) / 24));
 
-                ctx.fillStyle = `hsl(${hue}, ${saturation}%, ${lightness}%)`;
+                if (dist > radius) {
+                    let max_l = Math.sqrt(((width - 1) / 2) ** 2 + ((width - 1) / 2) ** 2);
 
-                ctx.fillRect(0, i * (gradient_element.width / x_resolution), gradient_element.width, gradient_element.width / x_resolution);
+                    lightness += ((dist - radius) / (max_l - radius)) * 8;
+                }
+
+
+                if (distance_from_target_angle < (target_angle_fov / 2)) {
+                    lightness += 15 * (1 - (distance_from_target_angle * 2 / target_angle_fov))
+                }
+
+
+
+                let [r, g, b] = HSLToRGB([hue / 360, saturation / 100, lightness / 100])
+
+                buffer[i] = r;
+                buffer[i + 1] = g;
+                buffer[i + 2] = b;
+
+                buffer[i + 3] = 0xff;
             }
+
+            let imdata = new ImageData(buffer, width, width);
+            ctx.putImageData(imdata, 0, 0)
 
             favicon_element.href = gradient_element.toDataURL();
         }
@@ -144,8 +284,8 @@
             // draw something on the screen
 
             console.log("start render")
-            render();
-            window.setInterval(render, 1000);
+            render(); render_initialised = 1;
+            window.setInterval(render, 100)
         }
 
         window.onload = initialise;
