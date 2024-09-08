@@ -48,7 +48,7 @@
         }
 
         #root canvas {
-            border-radius: 2rem;
+            border-radius: 50%;
 
             width: 100%;
             height: 100%;
@@ -136,29 +136,49 @@
             time_element;
 
         let colors = [
-            [203, 34, 32],
-            [103, 241, 32],
-            [203, 34, 122],
-            [203, 34, 322],
-            [23, 34, 22],
-            [23, 34, 32],
-            [243, 34, 232],
-            [3, 34, 32],
-            [2, 124, 342],
-            [203, 234, 35],
-            [223, 34, 32],
-            [213, 54, 32],
+            [70, 130, 180],
+            [255, 99, 71],
+            [255, 215, 0],
+            [123, 104, 238],
+            [34, 139, 34],
+            [255, 105, 180],
+            [255, 165, 0],
+            [75, 0, 130],
+            [255, 20, 147],
+            [0, 191, 255],
+            // [127, 122, 78],
+            // [128, 0, 128],
+            [0, 0, 0],
+            [0xff, 0xff, 0xff],
+            // [0, 0, 0],
+            // [0xff, 0xff, 0xff],
+            // [0, 0, 0],
+            // [0xff, 0xff, 0xff],
+            // [0, 0, 0],
+            // [0xff, 0xff, 0xff],
+            // [0, 0, 0],
+            // [0xff, 0xff, 0xff],
+            // [0, 0, 0],
+            // [0xff, 0xff, 0xff],
+
         ];
 
+        if (colors.length != 12) {
+            throw new Error("colors must be twelve");
+            
+        }
+
+        let time = Date.now()
         function render_data() {
+            // let date = new Date(time += 1000 * 9), // quick time
+            
             let date = new Date(),
                 hours = date.getHours(),
                 minutes = date.getMinutes(),
                 seconds = date.getSeconds();
-
-            // determine colors based on time ...
-            let color_idx = 1;
-            let start = colors[color_idx], end = colors[color_idx];
+                // determine colors based on time ...
+                let color_idx = Math.floor(hours / 24 * colors.length * 2) % colors.length;
+                let start = colors[color_idx], end = colors[((hours + 1) / 24 * colors.length * 2) % colors.length];
 
             return {
                 date,
@@ -171,10 +191,38 @@
             };
         }
 
-        const width = 20;
+        function get_angle(ox, oy) {
+            let angle = Math.atan(ox / oy);
+
+            // correct angle to a full rotation
+            if (isNaN(angle)) {
+                angle = 0
+            }
+
+            if (ox >= 0 && oy >= 0) {
+                // Q1
+                angle = angle;
+            } else if (ox >= 0 && oy <= 0) {
+                // Q2
+                angle = Math.PI + angle // the angle is negative
+            } else if (ox < 0 && oy < 0) {
+                // Q3
+                angle = Math.PI + angle;
+            } else {
+                // Q4
+                angle = 2 * Math.PI + angle
+            }
+
+            return angle;
+        }
+
+        const width = 360;
         let radius = (width - 1) / 2;
+        let max_possible_radius = Math.sqrt(((width - 1) / 2) ** 2 + ((width - 1) / 2) ** 2);
         let buffer = new Uint8ClampedArray(width * width * 4);
         let render_initialised = 0;
+
+        const lerp = (t, i, f) => (f - i) * t + i;
 
         function render() {
             let { hours, minutes, seconds, milliseconds, rgb_start, rgb_end } = render_data();
@@ -186,15 +234,13 @@
             time_element.textContent = time_string;
 
             // update image every 6 seconds
-            if (render_initialised && seconds % 1 != 0) {
+            if (render_initialised && seconds % 3 != 0) {
                 return;
             }
 
-            let begin = [234, 120, 0], end = [239, 130, 0];
-
             // determine target_angle based on seconds
             // seconds / 60 * 2* Math.PI - Math.PI / 2
-            let target_angle = (1 - (seconds * 1000 + milliseconds) / (1000 * 60)) * 2 * Math.PI + Math.PI / 2, target_angle_fov = Math.PI / 2;
+            let target_angle = (seconds * 1000 + milliseconds) / (1000 * 60) * 2 * Math.PI, target_angle_fov = Math.PI / 6;
 
             // draw a circle for the vibes ...
 
@@ -202,65 +248,85 @@
                 let x = (i % (width * 4)) / 4, y = Math.floor(i / (width * 4));
                 let ox = x - ((width - 1) / 2), oy = ((width - 1) / 2) - y; // values with the origin in the middle of the canvas
 
+                // if (y > width - (width * 0.075)) {
+                //     buffer[i] = lerp(x / (width - 1), rgb_start[0], rgb_end[0]);
+                //     buffer[i + 1] = lerp(x / (width - 1), rgb_start[1], rgb_end[1]);
+                //     buffer[i + 2] = lerp(x / (width - 1), rgb_start[2], rgb_end[2]);
+
+                //     buffer[i + 3] = 0xff;
+
+                //     continue
+                // }
+
                 // distance from center
                 let dist = Math.sqrt(ox ** 2 + oy ** 2);
                 // calculate angle
-                // tan a = oy / ox
-                let angle = Math.atan(oy / ox);
+                let angle = get_angle(ox, oy);
 
-                // correct angle to a full rotation
-                if (isNaN(angle)) {
-                    angle = 0
+
+                if (dist >= radius + 1) {
+                    buffer[i + 3] = 0;
+                    continue
                 }
 
-                if (oy >= 0 && ox >= 0) {
-                    // Q1
-                    angle = angle;
-                } else if (oy >= 0 && ox <= 0) {
-                    // Q2
-                    angle = Math.PI + angle // the angle is negative
-                } else if (oy < 0 && ox < 0) {
-                    // Q3
-                    angle = Math.PI + angle;
+
+                let r, g, b;
+                // set color for now to just a lerp
+                if (0 && true /* something ... */) {
+                    let bool = 0;
+                    let distance_from_target_angle = Math.min(Math.abs(target_angle - angle), Math.abs(target_angle - angle + 2 * Math.PI), Math.abs(angle - target_angle + 2 * Math.PI));
+                    if (distance_from_target_angle < (Math.PI / 8)) {
+                        bool = x & 1;
+                    }
+
+                    let dist_value = (lerp(dist / radius, 1, 0.9) * (minutes / 59))
+
+                    if (angle < target_angle) {
+                        //  this is where the values get bumped to indicate the second has passed
+                        r = lerp(lerp(seconds / 60, minutes / 60, (minutes + 1) / 60) * dist_value, rgb_start[0], rgb_end[0])
+                        g = lerp(lerp(seconds / 60, minutes / 60, (minutes + 1) / 60) * dist_value, rgb_start[1], rgb_end[1])
+                        b = lerp(lerp(seconds / 60, minutes / 60, (minutes + 1) / 60) * dist_value, rgb_start[2], rgb_end[2])
+                    } else {
+                        r = lerp(minutes / 60 * dist_value, rgb_start[0], rgb_end[0]);
+                        g = lerp(minutes / 60 * dist_value, rgb_start[1], rgb_end[1]);
+                        b = lerp(minutes / 60 * dist_value, rgb_start[2], rgb_end[2]);
+                    }
+                    // TODO: add some kind of blurring effect at the leading and trailing edge
+
+
                 } else {
-                    // Q4
-                    angle = 2 * Math.PI + angle
+
+                    let t = lerp(dist / radius * seconds / 59, minutes / 60, (minutes + 1) / 60)
+
+                    r = lerp(t, rgb_start[0], rgb_end[0]);
+                    g = lerp(t, rgb_start[1], rgb_end[1]);
+                    b = lerp(t, rgb_start[2], rgb_end[2]);
+                    // if (x == 100 && y == 100 && seconds) {
+
+                    //     console.log(Math.round(r), Math.round(g), Math.round(b))
+                    // }
                 }
 
 
-                let distance_from_target_angle = Math.min(Math.abs(target_angle - angle), Math.abs(target_angle - angle + 2 * Math.PI), Math.abs(angle - target_angle + 2 * Math.PI));
-
-
-                let lightness = ((width - y) / width) * (1 - (minutes / 60)) * 50 + 30; // 30% -> 80%
-                let saturation = ((60 - minutes) / 60) * 40 + 30;
-                let hue = (((hours % 2 == 0) ? (60 - minutes) : minutes) / 60) * 60 + 60 * ((360 / 60) * ((hours) / 24));
-
-                if (dist > radius) {
-                    let max_l = Math.sqrt(((width - 1) / 2) ** 2 + ((width - 1) / 2) ** 2);
-
-                    lightness += ((dist - radius) / (max_l - radius)) * 8;
-                }
-
-
-                if (distance_from_target_angle < (target_angle_fov / 2)) {
-                    lightness += 15 * (1 - (distance_from_target_angle * 2 / target_angle_fov))
-                }
-
-
-
-                let [r, g, b] = HSLToRGB([hue / 360, saturation / 100, lightness / 100])
-
-                buffer[i] = r;
-                buffer[i + 1] = g;
-                buffer[i + 2] = b;
-
+                buffer[i] = Math.round(r);
+                buffer[i + 1] = Math.round(g);
+                buffer[i + 2] = Math.round(b);
                 buffer[i + 3] = 0xff;
             }
 
             let imdata = new ImageData(buffer, width, width);
             ctx.putImageData(imdata, 0, 0)
 
+
             favicon_element.href = gradient_element.toDataURL();
+
+            // view data and see is there actually a effect
+            // select row
+            // console.clear()
+            // let offset = Math.floor(radius) * width * 4;
+            // for (let i = 0; i <radius; i+=4) {
+            //     console.log(buffer[offset + i], buffer[offset + i + 1], buffer[offset + i +2])
+            // }
         }
 
         function initialise(event) {
@@ -285,7 +351,7 @@
 
             console.log("start render")
             render(); render_initialised = 1;
-            window.setInterval(render, 100)
+            window.setInterval(render, 1000)
         }
 
         window.onload = initialise;
