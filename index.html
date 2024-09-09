@@ -151,11 +151,12 @@
             return angle;
         }
 
-        const width = 420;
+        const width = 360;
         let radius = (width - 1) / 2;
         let max_possible_radius = Math.sqrt(((width - 1) / 2) ** 2 + ((width - 1) / 2) ** 2);
         let buffer = new Uint8ClampedArray(width * width * 4);
         let render_initialised = 0;
+        let previous_data_url;
 
         const lerp = (t, i, f) => (f - i) * t + i;
 
@@ -210,9 +211,13 @@
                 g = lerp(t, rgb_start[1], rgb_end[1]);
                 b = lerp(t, rgb_start[2], rgb_end[2]);
 
-                const angle_feature_range = (5 * Math.PI / 12);
+                const angle_feature_range = (7 * Math.PI / 12);
                 if (distance_from_target_angle < angle_feature_range) {
-                    t = lerp(1 - distance_from_target_angle / angle_feature_range, 0, /*minutes / 59 **/ dist / radius);
+                    let dstart = radius * 0.6, dval = dist > dstart ? (dist - dstart) / (radius - dstart) : 0;
+
+                    t = lerp(1 - distance_from_target_angle / angle_feature_range, 0, dval);
+
+
 
                     r = lerp(t, r, lerp(minutes / 60, rgb_end[0], rgb_feature[0]));
                     g = lerp(t, g, lerp(minutes / 60, rgb_end[1], rgb_feature[1]));
@@ -229,11 +234,18 @@
             ctx.putImageData(imdata, 0, 0)
 
             // update image every 6 seconds
-            if (render_initialised && seconds % 3 != 0) {
+            if (render_initialised && seconds % 6 != 0) {
                 return;
             }
 
-            favicon_element.href = gradient_element.toDataURL();
+            // favicon_element.href = gradient_element.toDataURL()
+            gradient_element.toBlob((blob) => {
+                if (previous_data_url) {
+                    URL.revokeObjectURL(previous_data_url)
+                }
+                previous_data_url = URL.createObjectURL(blob);
+                favicon_element.href = previous_data_url;
+            })
 
             // view data and see is there actually a effect
             // select row
