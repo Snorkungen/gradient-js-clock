@@ -111,7 +111,8 @@
                 seconds = date.getSeconds();
             // determine colors based on time ...
             let color_idx = Math.floor(hours / 24 * colors.length * 2) % colors.length;
-            let start = colors[color_idx], end = colors[((hours + 1) / 24 * colors.length * 2) % colors.length];
+            let start = colors[color_idx], end = colors[((hours + 1) / 24 * colors.length * 2) % colors.length],
+                rgb_feature = colors[((hours + 2) / 24 * colors.length * 2) % colors.length];
 
             return {
                 date,
@@ -121,6 +122,7 @@
                 milliseconds: date.getUTCMilliseconds(),
 
                 rgb_start: start, rgb_end: end,
+                rgb_feature
             };
         }
 
@@ -158,7 +160,7 @@
         const lerp = (t, i, f) => (f - i) * t + i;
 
         function render() {
-            let { hours, minutes, seconds, milliseconds, rgb_start, rgb_end } = render_data();
+            let { hours, minutes, seconds, milliseconds, rgb_start, rgb_end, rgb_feature } = render_data();
             // get time and stuff
 
             let time_string = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
@@ -208,18 +210,14 @@
                 g = lerp(t, rgb_start[1], rgb_end[1]);
                 b = lerp(t, rgb_start[2], rgb_end[2]);
 
-                const angle_feature_range = (5 * Math.PI / 12)
-                const feature_color = rgb_end;[244, 231, 155]
-                // colors[(Math.floor(hours / 24 * colors.length * 2) + 2) % colors.length] 
-
+                const angle_feature_range = (5 * Math.PI / 12);
                 if (distance_from_target_angle < angle_feature_range) {
-                    t = lerp(1 - distance_from_target_angle / angle_feature_range, 0, minutes / 59 * dist / radius);
+                    t = lerp(1 - distance_from_target_angle / angle_feature_range, 0, /*minutes / 59 **/ dist / radius);
 
-                    r = lerp(t, r, feature_color[0]);
-                    g = lerp(t, g, feature_color[1]);
-                    b = lerp(t, b, feature_color[2]);
+                    r = lerp(t, r, lerp(minutes / 60, rgb_end[0], rgb_feature[0]));
+                    g = lerp(t, g, lerp(minutes / 60, rgb_end[1], rgb_feature[1]));
+                    b = lerp(t, b, lerp(minutes / 60, rgb_end[2], rgb_feature[2]));
                 }
-
 
                 buffer[i] = Math.round(r);
                 buffer[i + 1] = Math.round(g);
@@ -229,7 +227,6 @@
 
             let imdata = new ImageData(buffer, width, width);
             ctx.putImageData(imdata, 0, 0)
-
 
             // update image every 6 seconds
             if (render_initialised && seconds % 3 != 0) {
