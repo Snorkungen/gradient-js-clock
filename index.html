@@ -99,7 +99,6 @@
 
         if (colors.length != 12) {
             throw new Error("colors must be twelve");
-
         }
 
         let time = Date.now()
@@ -151,10 +150,21 @@
             return angle;
         }
 
+        const angle_feature_range = (7 * Math.PI / 12);
         const width = 360;
         let radius = (width - 1) / 2;
         let max_possible_radius = Math.sqrt(((width - 1) / 2) ** 2 + ((width - 1) / 2) ** 2);
         let buffer = new Uint8ClampedArray(width * width * 4);
+
+        const precomputed_angles = new Float32Array(width * width * 2);
+        for (let i = 0; i < precomputed_angles.length; i += 2) {
+            let x = (i % (width * 2)) / 2, y = Math.floor(i / (width * 2));
+            let ox = x - ((width - 1) / 2), oy = ((width - 1) / 2) - y;
+
+            precomputed_angles[i] = get_angle(ox, oy);
+            precomputed_angles[i + 1] = Math.sqrt(ox ** 2 + oy ** 2);
+        }
+
         let render_initialised = 0;
         let previous_data_url;
 
@@ -169,33 +179,18 @@
             title_element.textContent = time_string.substring(0, 5);
             time_element.textContent = time_string;
 
-
             // determine target_angle based on seconds
             // seconds / 60 * 2* Math.PI - Math.PI / 2
-            let target_angle = (seconds * 1000 + milliseconds) / (1000 * 60) * 2 * Math.PI, target_angle_fov = Math.PI / 6;
-
-            // draw a circle for the vibes ...
+            let target_angle = (seconds * 1000 + milliseconds) / (1000 * 60) * 2 * Math.PI;
 
             for (let i = 0; i < buffer.byteLength; i += 4) {
                 let x = (i % (width * 4)) / 4, y = Math.floor(i / (width * 4));
                 let ox = x - ((width - 1) / 2), oy = ((width - 1) / 2) - y; // values with the origin in the middle of the canvas
 
-                // if (y > width - (width * 0.075)) {
-                //     buffer[i] = lerp(x / (width - 1), rgb_start[0], rgb_end[0]);
-                //     buffer[i + 1] = lerp(x / (width - 1), rgb_start[1], rgb_end[1]);
-                //     buffer[i + 2] = lerp(x / (width - 1), rgb_start[2], rgb_end[2]);
+                let angle = precomputed_angles[i / 2];
+                let dist = precomputed_angles[(i / 2 + 1)]
 
-                //     buffer[i + 3] = 0xff;
-
-                //     continue
-                // }
-
-                // distance from center
-                let dist = Math.sqrt(ox ** 2 + oy ** 2);
-                // calculate angle
-                let angle = get_angle(ox, oy);
                 let distance_from_target_angle = Math.min(Math.abs(target_angle - angle), Math.abs(target_angle - angle + 2 * Math.PI), Math.abs(angle - target_angle + 2 * Math.PI));
-
 
                 if (dist >= radius + 1) {
                     buffer[i + 3] = 0;
@@ -211,22 +206,19 @@
                 g = lerp(t, rgb_start[1], rgb_end[1]);
                 b = lerp(t, rgb_start[2], rgb_end[2]);
 
-                const angle_feature_range = (7 * Math.PI / 12);
                 if (distance_from_target_angle < angle_feature_range) {
                     let dstart = radius * 0.6, dval = dist > dstart ? (dist - dstart) / (radius - dstart) : 0;
 
                     t = lerp(1 - distance_from_target_angle / angle_feature_range, 0, dval);
-
-
 
                     r = lerp(t, r, lerp(minutes / 60, rgb_end[0], rgb_feature[0]));
                     g = lerp(t, g, lerp(minutes / 60, rgb_end[1], rgb_feature[1]));
                     b = lerp(t, b, lerp(minutes / 60, rgb_end[2], rgb_feature[2]));
                 }
 
-                buffer[i] = Math.round(r);
-                buffer[i + 1] = Math.round(g);
-                buffer[i + 2] = Math.round(b);
+                buffer[i] = (r);
+                buffer[i + 1] = (g);
+                buffer[i + 2] = (b);
                 buffer[i + 3] = 0xff;
             }
 
@@ -239,21 +231,15 @@
             }
 
             // favicon_element.href = gradient_element.toDataURL()
-            gradient_element.toBlob((blob) => {
-                if (previous_data_url) {
+            gradient_element.toBlob(handle_to_blob)
+        }
+
+        function handle_to_blob(blob) {
+            if (previous_data_url) {
                     URL.revokeObjectURL(previous_data_url)
                 }
                 previous_data_url = URL.createObjectURL(blob);
                 favicon_element.href = previous_data_url;
-            })
-
-            // view data and see is there actually a effect
-            // select row
-            // console.clear()
-            // let offset = Math.floor(radius) * width * 4;
-            // for (let i = 0; i <radius; i+=4) {
-            //     console.log(buffer[offset + i], buffer[offset + i + 1], buffer[offset + i +2])
-            // }
         }
 
         function initialise(event) {
