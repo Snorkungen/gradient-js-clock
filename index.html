@@ -60,8 +60,8 @@
             margin: 0;
             padding: 0;
             z-index: 9;
-
-            background-color: var(--background-color);
+            text-shadow: var(--background-color) 1px 1px 12px; 
+            /* background-color: var(--background-color); */
             width: fit-content;
             padding: 1rem;
             border-radius: 2rem;
@@ -103,7 +103,7 @@
 
         let time = Date.now()
         function render_data() {
-            // let date = new Date(time += 1000 * 9), // quick time
+            // let date = new Date(time += 1000 * 90), // quick time
             let date = new Date(),
                 hours = date.getHours(),
                 minutes = date.getMinutes(),
