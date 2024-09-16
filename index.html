@@ -6,7 +6,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Gradient Clock</title>
-    <link rel="shortcut icon" href="#" />
+    <link rel="icon" href="#" />
 
     <style>
         :root {
@@ -60,7 +60,7 @@
             margin: 0;
             padding: 0;
             z-index: 9;
-            text-shadow: var(--background-color) 1px 1px 12px; 
+            text-shadow: var(--background-color) 1px 1px 12px;
             /* background-color: var(--background-color); */
             width: fit-content;
             padding: 1rem;
@@ -69,6 +69,31 @@
     </style>
 
     <script>
+        const angle_feature_range = (6 * Math.PI / 11);
+        const width = 360;
+        let radius = (width - 1) / 2;
+        let max_possible_radius = Math.sqrt(((width - 1) / 2) ** 2 + ((width - 1) / 2) ** 2);
+        let buffer = new Uint8ClampedArray(width * width * 4);
+
+        let colors = [
+            [70, 130, 180],
+            [255, 99, 71],
+            [255, 215, 0],
+            [104, 157, 238],
+            [34, 139, 34],
+            [192, 97, 203],
+            [255, 165, 0],
+            [46, 194, 126],
+            [255, 20, 147],
+            [0, 191, 255],
+            [248, 228, 92],
+            [97, 111, 44]
+        ];
+
+        if (colors.length != 12) {
+            throw new Error("colors must be twelve");
+        }
+
         /** @type {HTMLElement} */
         let root_element,
             /** @type {HTMLElement} */
@@ -82,36 +107,17 @@
             /** @type {HTMLElement} */
             time_element;
 
-        let colors = [
-            [70, 130, 180],
-            [255, 99, 71],
-            [255, 215, 0],
-            [123, 104, 238],
-            [34, 139, 34],
-            [255, 105, 180],
-            [255, 165, 0],
-            [75, 0, 130],
-            [255, 20, 147],
-            [0, 191, 255],
-            [127, 122, 78],
-            [128, 0, 128],
-        ];
-
-        if (colors.length != 12) {
-            throw new Error("colors must be twelve");
-        }
-
         let time = Date.now()
         function render_data() {
-            // let date = new Date(time += 1000 * 90), // quick time
+            // let date = new Date(time += 1000 * 9), // quick time
             let date = new Date(),
                 hours = date.getHours(),
                 minutes = date.getMinutes(),
                 seconds = date.getSeconds();
             // determine colors based on time ...
-            let color_idx = Math.floor(hours / 24 * colors.length * 2) % colors.length;
-            let start = colors[color_idx], end = colors[((hours + 1) / 24 * colors.length * 2) % colors.length],
-                rgb_feature = colors[((hours + 2) / 24 * colors.length * 2) % colors.length];
+            let color_idx = (hours) % colors.length;
+            let start = colors[color_idx], end = colors[(color_idx + 1) % colors.length],
+                rgb_feature = colors[(color_idx + 2) % colors.length];
 
             return {
                 date,
@@ -149,12 +155,6 @@
 
             return angle;
         }
-
-        const angle_feature_range = (7 * Math.PI / 12);
-        const width = 360;
-        let radius = (width - 1) / 2;
-        let max_possible_radius = Math.sqrt(((width - 1) / 2) ** 2 + ((width - 1) / 2) ** 2);
-        let buffer = new Uint8ClampedArray(width * width * 4);
 
         const precomputed_angles = new Float32Array(width * width * 2);
         for (let i = 0; i < precomputed_angles.length; i += 2) {
@@ -196,17 +196,16 @@
 
                 let r, g, b;
                 // set color for now to just a lerp
-
-                let t = lerp(dist / radius * seconds / 59, minutes / 60, (minutes + 1) / 60)
+                let t = lerp(((dist / radius) * seconds / 59), minutes / 60, (minutes + 1) / 60);
 
                 r = lerp(t, rgb_start[0], rgb_end[0]);
                 g = lerp(t, rgb_start[1], rgb_end[1]);
                 b = lerp(t, rgb_start[2], rgb_end[2]);
 
                 if (distance_from_target_angle < angle_feature_range) {
-                    let dstart = radius * 0.6, dval = dist > dstart ? (dist - dstart) / (radius - dstart) : 0;
-
-                    t = lerp(1 - distance_from_target_angle / angle_feature_range, 0, dval);
+                    // perpendicular distance approximation
+                    let dstart = radius * 0.48, dval = dist > dstart ? (dist - dstart) / (radius - dstart) : 0;
+                    t = lerp(1 - (distance_from_target_angle / angle_feature_range), 0, dval * dval);
 
                     r = lerp(t, r, lerp(minutes / 60, rgb_end[0], rgb_feature[0]));
                     g = lerp(t, g, lerp(minutes / 60, rgb_end[1], rgb_feature[1]));
@@ -223,7 +222,7 @@
             ctx.putImageData(imdata, 0, 0)
 
             // update image every 6 seconds
-            if (render_initialised &&( seconds == prev_seconds || (seconds % 6 != 0))) {
+            if (render_initialised && (seconds == prev_seconds || (seconds % 6 != 0))) {
                 return;
             }
 
