@@ -69,11 +69,11 @@
     </style>
 
     <script>
-        const angle_feature_range = (6 * Math.PI / 11);
         const width = 360;
         let radius = (width - 1) / 2;
         let max_possible_radius = Math.sqrt(((width - 1) / 2) ** 2 + ((width - 1) / 2) ** 2);
         let buffer = new Uint8ClampedArray(width * width * 4);
+        const angle_feature_range = (8 * Math.PI / 11), angle_feature_dstart = radius * -0.25;
 
         let colors = [
             [70, 130, 180],
@@ -131,37 +131,12 @@
             };
         }
 
-        function get_angle(ox, oy) {
-            let angle = Math.atan(ox / oy);
-
-            // correct angle to a full rotation
-            if (isNaN(angle)) {
-                angle = 0
-            }
-
-            if (ox >= 0 && oy >= 0) {
-                // Q1
-                angle = angle;
-            } else if (ox >= 0 && oy <= 0) {
-                // Q2
-                angle = Math.PI + angle // the angle is negative
-            } else if (ox < 0 && oy < 0) {
-                // Q3
-                angle = Math.PI + angle;
-            } else {
-                // Q4
-                angle = 2 * Math.PI + angle
-            }
-
-            return angle;
-        }
-
         const precomputed_angles = new Float32Array(width * width * 2);
         for (let i = 0; i < precomputed_angles.length; i += 2) {
             let x = (i % (width * 2)) / 2, y = Math.floor(i / (width * 2));
             let ox = x - ((width - 1) / 2), oy = ((width - 1) / 2) - y;
 
-            precomputed_angles[i] = get_angle(ox, oy);
+            precomputed_angles[i] = (Math.PI / 2) - Math.atan2(oy, ox);
             precomputed_angles[i + 1] = Math.sqrt(ox ** 2 + oy ** 2);
         }
 
@@ -204,7 +179,7 @@
 
                 if (distance_from_target_angle < angle_feature_range) {
                     // perpendicular distance approximation
-                    let dstart = radius * 0.48, dval = dist > dstart ? (dist - dstart) / (radius - dstart) : 0;
+                    let dval = dist > angle_feature_dstart ? (dist - angle_feature_dstart) / (radius - angle_feature_dstart) : 0;
                     t = lerp(1 - (distance_from_target_angle / angle_feature_range), 0, dval * dval);
 
                     r = lerp(t, r, lerp(minutes / 60, rgb_end[0], rgb_feature[0]));
