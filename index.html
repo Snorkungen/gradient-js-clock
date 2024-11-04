@@ -69,6 +69,7 @@
     </style>
 
     <script>
+        const TITLE_INTERVAL_TIME = 6;
         const width = 360;
         let radius = (width - 1) / 2;
         let max_possible_radius = Math.sqrt(((width - 1) / 2) ** 2 + ((width - 1) / 2) ** 2);
@@ -107,6 +108,8 @@
             /** @type {HTMLElement} */
             time_element;
 
+        let last_render_time = Date.now();
+
         let time = Date.now()
         function render_data() {
             // let date = new Date(time += 1000 * 9), // quick time
@@ -140,8 +143,6 @@
             precomputed_angles[i + 1] = Math.sqrt(ox ** 2 + oy ** 2);
         }
 
-        let render_initialised = 0, prev_seconds;
-
         const lerp = (t, i, f) => (f - i) * t + i;
 
         function render() {
@@ -149,61 +150,57 @@
 
             // update the time text elements
             let time_string = `${hours.toString().padStart(2, "0")}:${minutes.toString().padStart(2, "0")}:${seconds.toString().padStart(2, "0")}`;
-            title_element.textContent = time_string.substring(0, 5);
             time_element.textContent = time_string;
 
-            // determine target_angle based on seconds
-            let target_angle = (seconds * 1000 + milliseconds) / (1000 * 60) * 2 * Math.PI;
+            { // draw image
+                // determine target_angle based on seconds
+                let target_angle = (seconds * 1000 + milliseconds) / (1000 * 60) * 2 * Math.PI;
 
-            for (let i = 0; i < buffer.byteLength; i += 4) {
-                let x = (i % (width * 4)) / 4, y = Math.floor(i / (width * 4));
-                let ox = x - ((width - 1) / 2), oy = ((width - 1) / 2) - y; // values with the origin in the middle of the canvas
+                for (let i = 0; i < buffer.byteLength; i += 4) {
+                    let x = (i % (width * 4)) / 4, y = Math.floor(i / (width * 4));
+                    let ox = x - ((width - 1) / 2), oy = ((width - 1) / 2) - y; // values with the origin in the middle of the canvas
 
-                let angle = precomputed_angles[i / 2];
-                let dist = precomputed_angles[(i / 2 + 1)]
+                    let angle = precomputed_angles[i / 2];
+                    let dist = precomputed_angles[(i / 2 + 1)]
 
-                let distance_from_target_angle = Math.min(Math.abs(target_angle - angle), Math.abs(target_angle - angle + 2 * Math.PI), Math.abs(angle - target_angle + 2 * Math.PI));
+                    let distance_from_target_angle = Math.min(Math.abs(target_angle - angle), Math.abs(target_angle - angle + 2 * Math.PI), Math.abs(angle - target_angle + 2 * Math.PI));
 
-                if (dist >= radius + 1) {
-                    buffer[i + 3] = 0;
-                    continue
+                    if (dist >= radius + 1) {
+                        buffer[i + 3] = 0;
+                        continue
+                    }
+
+                    let r, g, b;
+                    // set color for now to just a lerp
+                    let t = lerp(((dist / radius) * seconds / 59), minutes / 60, (minutes + 1) / 60);
+
+                    r = lerp(t, rgb_start[0], rgb_end[0]);
+                    g = lerp(t, rgb_start[1], rgb_end[1]);
+                    b = lerp(t, rgb_start[2], rgb_end[2]);
+
+                    if (distance_from_target_angle < angle_feature_range) {
+                        // perpendicular distance approximation
+                        let dval = dist > angle_feature_dstart ? (dist - angle_feature_dstart) / (radius - angle_feature_dstart) : 0;
+                        t = lerp(1 - (distance_from_target_angle / angle_feature_range), 0, dval * dval);
+
+                        r = lerp(t, r, lerp(minutes / 60, rgb_end[0], rgb_feature[0]));
+                        g = lerp(t, g, lerp(minutes / 60, rgb_end[1], rgb_feature[1]));
+                        b = lerp(t, b, lerp(minutes / 60, rgb_end[2], rgb_feature[2]));
+                    }
+
+                    buffer[i] = (r);
+                    buffer[i + 1] = (g);
+                    buffer[i + 2] = (b);
+                    buffer[i + 3] = 0xff;
                 }
 
-                let r, g, b;
-                // set color for now to just a lerp
-                let t = lerp(((dist / radius) * seconds / 59), minutes / 60, (minutes + 1) / 60);
-
-                r = lerp(t, rgb_start[0], rgb_end[0]);
-                g = lerp(t, rgb_start[1], rgb_end[1]);
-                b = lerp(t, rgb_start[2], rgb_end[2]);
-
-                if (distance_from_target_angle < angle_feature_range) {
-                    // perpendicular distance approximation
-                    let dval = dist > angle_feature_dstart ? (dist - angle_feature_dstart) / (radius - angle_feature_dstart) : 0;
-                    t = lerp(1 - (distance_from_target_angle / angle_feature_range), 0, dval * dval);
-
-                    r = lerp(t, r, lerp(minutes / 60, rgb_end[0], rgb_feature[0]));
-                    g = lerp(t, g, lerp(minutes / 60, rgb_end[1], rgb_feature[1]));
-                    b = lerp(t, b, lerp(minutes / 60, rgb_end[2], rgb_feature[2]));
-                }
-
-                buffer[i] = (r);
-                buffer[i + 1] = (g);
-                buffer[i + 2] = (b);
-                buffer[i + 3] = 0xff;
             }
 
+            // put imagedata onto canvas
             let imdata = new ImageData(buffer, width, width);
             ctx.putImageData(imdata, 0, 0)
 
-            // update image every 6 seconds
-            if (render_initialised && (seconds == prev_seconds || (seconds % 6 != 0))) {
-                return;
-            }
-
-            prev_seconds = seconds;
-
-            gradient_element.toBlob(handle_to_blob)
+            last_render_time = Date.now();
         }
 
         let previous_data_url;
@@ -213,6 +210,27 @@
             }
             previous_data_url = URL.createObjectURL(blob);
             favicon_element.href = previous_data_url;
+        }
+
+
+        function update_title() {
+            if ((Date.now() - last_render_time) > (TITLE_INTERVAL_TIME * 500)) {
+                // re paint the canvas
+                render();
+            }
+
+            title_element.textContent = time_element.textContent.slice(0, 5);
+            gradient_element.toBlob(handle_to_blob)
+        }
+
+        function ensure_title_is_up_to_date() {
+            update_title();
+
+            // synchronise interval with seconds, the timing does not really work but the maximum inaccuracy will be TITLE_INTERVAL_TIME
+            window.setTimeout(() => {
+                update_title();
+                window.setInterval(update_title, TITLE_INTERVAL_TIME * 1000)
+            }, Math.floor((TITLE_INTERVAL_TIME - ((Date.now() * 0.001) % TITLE_INTERVAL_TIME)) * 1000));
         }
 
         function initialise(event) {
@@ -235,8 +253,11 @@
 
             // draw something on the screen
             console.log("start render")
-            render(); render_initialised = 1;
-            window.setInterval(render, 66)
+
+            const animate = () => { render(); window.requestAnimationFrame(animate) };
+            animate();
+
+            ensure_title_is_up_to_date();
         }
 
         window.onload = initialise;
